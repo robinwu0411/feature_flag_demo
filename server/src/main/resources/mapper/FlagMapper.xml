@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ffs.server.mapper.FlagMapper">
+
+    <resultMap id="flagMap" type="com.ffs.server.model.entity.Flag">
+        <id property="id" column="id"/>
+        <result property="key" column="`key`"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="flagType" column="flag_type"/>
+        <result property="defaultValue" column="default_value"/>
+        <result property="enabled" column="enabled"/>
+        <result property="releaseVersion" column="release_version"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="flagMap">
+        SELECT * FROM flag WHERE id = #{id}
+    </select>
+
+    <select id="findByKey" resultMap="flagMap">
+        SELECT * FROM flag WHERE `key` = #{key}
+    </select>
+
+    <select id="findAll" resultMap="flagMap">
+        SELECT * FROM flag ORDER BY id
+    </select>
+
+    <select id="findByApplicationId" resultMap="flagMap">
+        SELECT f.* FROM flag f
+        INNER JOIN flag_application fa ON f.id = fa.flag_id
+        WHERE fa.application_id = #{appId}
+    </select>
+
+    <select id="findByApplicationIdAndUpdatedAfter" resultMap="flagMap">
+        SELECT f.* FROM flag f
+        INNER JOIN flag_application fa ON f.id = fa.flag_id
+        WHERE fa.application_id = #{appId} AND f.updated_at > #{since}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO flag (`key`, name, description, flag_type, default_value, enabled, release_version, created_by, created_at, updated_at)
+        VALUES (#{key}, #{name}, #{description}, #{flagType}, #{defaultValue}, #{enabled}, #{releaseVersion}, #{createdBy}, NOW(), NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE flag SET
+            name = #{name},
+            description = #{description},
+            default_value = #{defaultValue},
+            enabled = #{enabled},
+            release_version = #{releaseVersion},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM flag WHERE id = #{id}
+    </delete>
+
+    <insert id="insertFlagApplication">
+        INSERT INTO flag_application (flag_id, application_id) VALUES (#{flagId}, #{applicationId})
+    </insert>
+
+    <select id="findApplicationIdsByFlagId" resultType="long">
+        SELECT application_id FROM flag_application WHERE flag_id = #{flagId}
+    </select>
+</mapper>
