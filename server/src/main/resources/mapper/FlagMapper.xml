@@ -5,7 +5,7 @@
 
     <resultMap id="flagMap" type="com.ffs.server.model.entity.Flag">
         <id property="id" column="id"/>
-        <result property="key" column="`key`"/>
+        <result property="key" column="key"/>
         <result property="name" column="name"/>
         <result property="description" column="description"/>
         <result property="flagType" column="flag_type"/>

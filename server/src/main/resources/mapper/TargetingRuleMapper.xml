@@ -9,7 +9,7 @@
         <result property="priority" column="priority"/>
         <result property="attribute" column="attribute"/>
         <result property="operator" column="operator"/>
-        <result property="value" column="value"/>
+        <result property="value" column="`value`"/>
         <result property="serveValue" column="serve_value"/>
         <result property="enabled" column="enabled"/>
         <result property="createdAt" column="created_at"/>
@@ -24,7 +24,7 @@
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO targeting_rule (flag_id, priority, attribute, operator, value, serve_value, enabled, created_at)
+        INSERT INTO targeting_rule (flag_id, priority, attribute, operator, `value`, serve_value, enabled, created_at)
         VALUES (#{flagId}, #{priority}, #{attribute}, #{operator}, #{value}, #{serveValue}, #{enabled}, NOW())
     </insert>
 
@@ -33,7 +33,7 @@
             priority = #{priority},
             attribute = #{attribute},
             operator = #{operator},
-            value = #{value},
+            `value` = #{value},
             serve_value = #{serveValue},
             enabled = #{enabled}
         WHERE id = #{id}
