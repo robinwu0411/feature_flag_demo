@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "testCases": [
+    {
+      "name": "disabled flag returns default",
+      "flag": { "key": "test", "type": "BOOLEAN", "defaultValue": "false", "enabled": false, "rules": [] },
+      "user": { "id": "u1" },
+      "expected": "false", "expectedReason": "disabled"
+    },
+    {
+      "name": "rule EQUALS match",
+      "flag": { "key": "test", "type": "BOOLEAN", "defaultValue": "false", "enabled": true,
+        "rules": [{ "priority": 1, "attribute": "region", "operator": "EQUALS", "value": "\"eu-west\"", "serveValue": "true" }] },
+      "user": { "id": "u1", "region": "eu-west" },
+      "expected": "true", "expectedReason": "rule_match"
+    },
+    {
+      "name": "rule priority first match wins",
+      "flag": { "key": "test", "type": "BOOLEAN", "defaultValue": "false", "enabled": true,
+        "rules": [
+          { "priority": 1, "attribute": "region", "operator": "EQUALS", "value": "\"eu-west\"", "serveValue": "true" },
+          { "priority": 2, "attribute": "region", "operator": "EQUALS", "value": "\"eu-west\"", "serveValue": "false" }
+        ] },
+      "user": { "id": "u1", "region": "eu-west" },
+      "expected": "true", "expectedReason": "rule_match"
+    },
+    {
+      "name": "rollout 100%",
+      "flag": { "key": "test", "type": "BOOLEAN", "defaultValue": "false", "enabled": true, "rules": [],
+        "rollout": { "percentage": 100, "serveValue": "true" } },
+      "user": { "id": "u1" },
+      "expected": "true", "expectedReason": "rollout"
+    },
+    {
+      "name": "custom attribute targeting",
+      "flag": { "key": "test", "type": "BOOLEAN", "defaultValue": "false", "enabled": true,
+        "rules": [{ "priority": 1, "attribute": "membership_level", "operator": "EQUALS", "value": "\"vip\"", "serveValue": "true" }] },
+      "user": { "id": "u1", "membership_level": "vip" },
+      "expected": "true", "expectedReason": "rule_match"
+    }
+  ]
+}
