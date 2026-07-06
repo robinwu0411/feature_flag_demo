@@ -1,7 +1,8 @@
 package com.ffs.sdk.model;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class FlagConfig {
     private String key;
     private String type;
@@ -9,8 +10,6 @@ public class FlagConfig {
     private boolean enabled;
     private String releaseVersion;
     private String updatedAt;
-    private List<TargetingRule> rules;
-    private Rollout rollout;
 
     public String getKey() { return key; }
     public void setKey(String key) { this.key = key; }
@@ -24,17 +23,4 @@ public class FlagConfig {
     public void setReleaseVersion(String releaseVersion) { this.releaseVersion = releaseVersion; }
     public String getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
-    public List<TargetingRule> getRules() { return rules; }
-    public void setRules(List<TargetingRule> rules) { this.rules = rules; }
-    public Rollout getRollout() { return rollout; }
-    public void setRollout(Rollout rollout) { this.rollout = rollout; }
-
-    public static class Rollout {
-        private int percentage;
-        private String serveValue;
-        public int getPercentage() { return percentage; }
-        public void setPercentage(int percentage) { this.percentage = percentage; }
-        public String getServeValue() { return serveValue; }
-        public void setServeValue(String serveValue) { this.serveValue = serveValue; }
-    }
 }

@@ -1,5 +1,7 @@
 package com.ffs.server.controller;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,14 +16,18 @@ import java.util.Map;
 public class HealthController {
     private final DataSource dataSource;
     private final RedisConnectionFactory redisConnectionFactory;
+    private final Counter healthCheckCounter;
 
-    public HealthController(DataSource dataSource, RedisConnectionFactory redisConnectionFactory) {
+    public HealthController(DataSource dataSource, RedisConnectionFactory redisConnectionFactory,
+                            MeterRegistry registry) {
         this.dataSource = dataSource;
         this.redisConnectionFactory = redisConnectionFactory;
+        this.healthCheckCounter = Counter.builder("ff_health_checks_total").register(registry);
     }
 
     @GetMapping("/api/v1/health")
     public ResponseEntity<Map<String, String>> health() {
+        healthCheckCounter.increment();
         Map<String, String> status = new HashMap<>();
         try (Connection conn = dataSource.getConnection()) {
             status.put("database", conn.isValid(2) ? "UP" : "DOWN");

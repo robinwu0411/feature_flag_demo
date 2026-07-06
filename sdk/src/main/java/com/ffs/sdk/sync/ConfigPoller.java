@@ -3,6 +3,7 @@ package com.ffs.sdk.sync;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ffs.sdk.cache.FlagCache;
+import com.ffs.sdk.config.ClientConfig;
 import com.ffs.sdk.model.FlagConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,9 @@ public class ConfigPoller {
     private final String serverUrl;
     private final String appId;
     private final long intervalMs;
+    private final int maxRetries;
+    private final long retryBaseDelayMs;
+    private final long retryMaxDelayMs;
     private final FlagCache cache;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newHttpClient();
@@ -31,18 +35,25 @@ public class ConfigPoller {
     private Instant lastSyncTimestamp;
     private volatile boolean running = false;
 
-    public ConfigPoller(String serverUrl, String appId, long intervalMs, FlagCache cache) {
-        this.serverUrl = serverUrl; this.appId = appId; this.intervalMs = intervalMs; this.cache = cache;
+    public ConfigPoller(ClientConfig config, FlagCache cache) {
+        this.serverUrl = config.getServerUrl();
+        this.appId = config.getAppId();
+        this.intervalMs = config.getSyncIntervalMs();
+        this.maxRetries = config.getMaxRetries();
+        this.retryBaseDelayMs = config.getRetryBaseDelayMs();
+        this.retryMaxDelayMs = config.getRetryMaxDelayMs();
+        this.cache = cache;
     }
 
     public synchronized void start() {
         if (running) return;
         running = true;
-        syncFull();
+        syncWithRetry(null, maxRetries);
         scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "ff-sdk-poller"); t.setDaemon(true); return t;
         });
-        scheduler.scheduleWithFixedDelay(this::syncIncremental, intervalMs, intervalMs, TimeUnit.MILLISECONDS);
+        scheduler.scheduleWithFixedDelay(() -> syncWithRetry(lastSyncTimestamp, 1),
+                intervalMs, intervalMs, TimeUnit.MILLISECONDS);
     }
 
     public synchronized void stop() {
@@ -50,33 +61,44 @@ public class ConfigPoller {
         if (scheduler != null) scheduler.shutdown();
     }
 
-    private void syncFull() {
-        try {
-            HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(serverUrl + "/api/v1/eval/sync?appId=" + appId))
-                    .GET().timeout(Duration.ofSeconds(10)).build();
-            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() == 200) {
-                cache.putAll(parseFlags(resp.body()));
-                lastSyncTimestamp = Instant.now();
-                log.info("SDK initial sync: {} flags", cache.size());
+    private void syncWithRetry(Instant since, int retries) {
+        int attempt = 0;
+        long delay = retryBaseDelayMs;
+        while (attempt <= retries) {
+            attempt++;
+            try {
+                doSync(since);
+                return;
+            } catch (Exception e) {
+                if (attempt > retries) {
+                    log.warn("SDK sync failed after {} attempts: {}", attempt, e.getMessage());
+                    return;
+                }
+                long wait = Math.min(delay, retryMaxDelayMs);
+                log.debug("SDK sync attempt {}/{} failed, retrying in {}ms", attempt, retries, wait);
+                try { Thread.sleep(wait); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); return; }
+                delay *= 2;
             }
-        } catch (Exception e) { log.warn("SDK initial sync failed: {}", e.getMessage()); }
+        }
     }
 
-    private void syncIncremental() {
-        try {
-            String url = serverUrl + "/api/v1/eval/sync?appId=" + appId;
-            if (lastSyncTimestamp != null) url += "&since=" + lastSyncTimestamp.toString();
-            HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(url)).GET().timeout(Duration.ofSeconds(10)).build();
-            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() == 200) {
-                Map<String, FlagConfig> updated = parseFlags(resp.body());
-                if (!updated.isEmpty()) { cache.merge(updated); log.debug("SDK sync updated {} flags", updated.size()); }
-                lastSyncTimestamp = Instant.now();
+    private void doSync(Instant since) throws Exception {
+        String url = serverUrl + "/api/v1/eval/sync?appId=" + appId;
+        if (since != null) url += "&since=" + since.toString();
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(url)).GET().timeout(Duration.ofSeconds(10)).build();
+        HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+        if (resp.statusCode() == 200) {
+            Map<String, FlagConfig> parsed = parseFlags(resp.body());
+            if (since == null) {
+                cache.putAll(parsed);
+                log.info("SDK initial sync: {} flags loaded", cache.size());
+            } else if (!parsed.isEmpty()) {
+                cache.merge(parsed);
+                log.debug("SDK sync updated {} flags", parsed.size());
             }
-        } catch (Exception e) { log.warn("SDK sync error: {}", e.getMessage()); }
+            lastSyncTimestamp = Instant.now();
+        }
     }
 
     private Map<String, FlagConfig> parseFlags(String body) {

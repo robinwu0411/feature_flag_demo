@@ -33,10 +33,19 @@ public class DemoController {
         resp.put("dark_mode", darkMode);
         resp.put("max_search_results", maxResults);
 
+        log.info("Checkout [{}, {}, {}]: new_checkout_ui={}, dark_mode={}, max_search_results={}",
+                userId, region, plan, newCheckout, darkMode, maxResults);
+
         Map<String, EvalResult> details = ffClient.evaluateAll(user,
                 "new_checkout_ui", "dark_mode", "max_search_results");
         resp.put("explainability", details);
-        log.info("Checkout evaluation: {}", details);
+
+        for (var entry : details.entrySet()) {
+            EvalResult r = entry.getValue();
+            log.info("Explain [{}]: value={}, reason={}, userId={}, region={}, release={}",
+                    r.getFlagKey(), r.getValue(), r.getReason(),
+                    r.getUserId(), r.getRegion(), r.getReleaseVersion());
+        }
         return resp;
     }
 
@@ -53,6 +62,8 @@ public class DemoController {
             resp.put("flag", result.getFlagKey()); resp.put("value", result.getValue());
             resp.put("reason", result.getReason()); resp.put("trace", result.getTrace());
             resp.put("releaseVersion", result.getReleaseVersion());
+            resp.put("userId", result.getUserId());
+            resp.put("region", result.getRegion());
         } else { resp.put("error", "Flag not found"); }
         return resp;
     }

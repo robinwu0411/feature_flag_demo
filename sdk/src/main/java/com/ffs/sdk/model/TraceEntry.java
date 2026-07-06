@@ -12,4 +12,9 @@ public class TraceEntry {
     public String getRuleId() { return ruleId; }
     public String getCondition() { return condition; }
     public boolean isMatched() { return matched; }
+
+    @Override
+    public String toString() {
+        return "{ruleId=" + ruleId + ", condition=" + condition + ", matched=" + matched + "}";
+    }
 }

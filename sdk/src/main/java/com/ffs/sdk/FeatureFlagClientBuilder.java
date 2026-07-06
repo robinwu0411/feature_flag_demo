@@ -3,6 +3,7 @@ package com.ffs.sdk;
 import com.ffs.sdk.cache.FlagCache;
 import com.ffs.sdk.config.ClientConfig;
 import com.ffs.sdk.sync.ConfigPoller;
+
 import java.time.Duration;
 
 public class FeatureFlagClientBuilder {
@@ -16,9 +17,13 @@ public class FeatureFlagClientBuilder {
 
     public FeatureFlagClient build() {
         if (appId == null) throw new IllegalArgumentException("appId is required");
-        ClientConfig config = ClientConfig.builder().serverUrl(serverUrl).appId(appId).syncInterval(syncInterval).build();
+        ClientConfig config = ClientConfig.builder()
+                .serverUrl(serverUrl)
+                .appId(appId)
+                .syncInterval(syncInterval)
+                .build();
         FlagCache cache = new FlagCache();
-        ConfigPoller poller = new ConfigPoller(config.getServerUrl(), config.getAppId(), config.getSyncIntervalMs(), cache);
+        ConfigPoller poller = new ConfigPoller(config, cache);
         return new FeatureFlagClient(config, cache, poller);
     }
 }

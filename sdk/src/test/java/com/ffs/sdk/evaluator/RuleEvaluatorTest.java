@@ -1,9 +1,11 @@
 package com.ffs.sdk.evaluator;
 
-import com.ffs.sdk.model.*;
+import com.ffs.sdk.model.EvalResult;
+import com.ffs.sdk.model.FFUser;
+import com.ffs.sdk.model.FlagConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class RuleEvaluatorTest {
@@ -14,58 +16,50 @@ class RuleEvaluatorTest {
 
     @Test
     void shouldReturnDefaultWhenDisabled() {
-        FlagConfig f = flag("test", "false", false);
-        assertThat(evaluator.evaluate(f, user("u1")).getValue()).isEqualTo("false");
-        assertThat(evaluator.evaluate(f, user("u1")).getReason()).isEqualTo("disabled");
+        FlagConfig f = flag("test", "BOOLEAN", "false", false);
+        EvalResult r = evaluator.evaluate(f, user("u1"));
+        assertThat(r.getValue()).isEqualTo("false");
+        assertThat(r.getReason()).isEqualTo("disabled");
     }
 
     @Test
-    void shouldMatchEqualsRule() {
-        FlagConfig f = flag("test", "false", true);
-        f.setRules(List.of(new TargetingRule(1, "region", "EQUALS", "\"eu-west\"", "true")));
-        EvalResult r = evaluator.evaluate(f, FFUser.builder().id("u1").region("eu-west").build());
+    void shouldReturnTrueWhenBooleanEnabled() {
+        FlagConfig f = flag("test", "BOOLEAN", "false", true);
+        EvalResult r = evaluator.evaluate(f, user("u1"));
         assertThat(r.getValue()).isEqualTo("true");
-        assertThat(r.getReason()).isEqualTo("rule_match");
+        assertThat(r.getReason()).isEqualTo("enabled");
     }
 
     @Test
-    void shouldRespectPriority() {
-        FlagConfig f = flag("test", "false", true);
-        f.setRules(List.of(
-                new TargetingRule(1, "region", "EQUALS", "\"eu-west\"", "true"),
-                new TargetingRule(2, "region", "EQUALS", "\"eu-west\"", "false")));
-        EvalResult r = evaluator.evaluate(f, FFUser.builder().id("u1").region("eu-west").build());
-        assertThat(r.getValue()).isEqualTo("true");
+    void shouldReturnDefaultValueWhenNonBooleanEnabled() {
+        FlagConfig f = flag("max_results", "NUMBER", "20", true);
+        EvalResult r = evaluator.evaluate(f, user("u1"));
+        assertThat(r.getValue()).isEqualTo("20");
+        assertThat(r.getReason()).isEqualTo("enabled");
     }
 
     @Test
-    void shouldHandle100PercentRollout() {
-        FlagConfig f = flag("test", "false", true);
-        FlagConfig.Rollout ro = new FlagConfig.Rollout(); ro.setPercentage(100); ro.setServeValue("true");
-        f.setRollout(ro);
-        assertThat(evaluator.evaluate(f, user("u1")).getReason()).isEqualTo("rollout");
-    }
-
-    @Test
-    void shouldMatchCustomAttribute() {
-        FlagConfig f = flag("test", "false", true);
-        f.setRules(List.of(new TargetingRule(1, "membership_level", "EQUALS", "\"vip\"", "true")));
-        EvalResult r = evaluator.evaluate(f, FFUser.builder().id("u1").custom("membership_level", "vip").build());
-        assertThat(r.getValue()).isEqualTo("true");
+    void shouldIncludeReleaseVersion() {
+        FlagConfig f = flag("test", "BOOLEAN", "false", true);
+        f.setReleaseVersion("v2.0.0");
+        EvalResult r = evaluator.evaluate(f, user("u1"));
+        assertThat(r.getReleaseVersion()).isEqualTo("v2.0.0");
     }
 
     @Test
     void shouldProduceTrace() {
-        FlagConfig f = flag("test", "false", true);
-        f.setRules(List.of(new TargetingRule(1, "region", "EQUALS", "\"eu-west\"", "true")));
-        EvalResult r = evaluator.evaluate(f, FFUser.builder().id("u1").region("eu-west").build());
+        FlagConfig f = flag("test", "BOOLEAN", "false", true);
+        EvalResult r = evaluator.evaluate(f, user("u1"));
         assertThat(r.getTrace()).isNotEmpty();
-        assertThat(r.getTrace().get(0).isMatched()).isTrue();
+        assertThat(r.getTrace().get(0).getRuleId()).isEqualTo("enabled_check");
     }
 
-    private FlagConfig flag(String key, String defVal, boolean enabled) {
+    private FlagConfig flag(String key, String type, String defVal, boolean enabled) {
         FlagConfig f = new FlagConfig();
-        f.setKey(key); f.setType("BOOLEAN"); f.setDefaultValue(defVal); f.setEnabled(enabled);
+        f.setKey(key);
+        f.setType(type);
+        f.setDefaultValue(defVal);
+        f.setEnabled(enabled);
         return f;
     }
 

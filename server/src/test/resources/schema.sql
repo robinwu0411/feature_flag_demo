@@ -1,12 +1,3 @@
-CREATE TABLE IF NOT EXISTS application (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    description TEXT,
-    enabled BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE IF NOT EXISTS flag (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     `key` VARCHAR(200) NOT NULL UNIQUE,
@@ -16,48 +7,8 @@ CREATE TABLE IF NOT EXISTS flag (
     default_value TEXT NOT NULL DEFAULT 'false',
     enabled BOOLEAN DEFAULT FALSE,
     release_version VARCHAR(100),
+    app_name VARCHAR(100) NOT NULL,
     created_by VARCHAR(200),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS flag_application (
-    flag_id BIGINT NOT NULL,
-    application_id BIGINT NOT NULL,
-    PRIMARY KEY (flag_id, application_id),
-    FOREIGN KEY (flag_id) REFERENCES flag(id) ON DELETE CASCADE,
-    FOREIGN KEY (application_id) REFERENCES application(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS targeting_rule (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    flag_id BIGINT NOT NULL,
-    priority INT NOT NULL,
-    attribute VARCHAR(100) NOT NULL,
-    operator VARCHAR(50) NOT NULL,
-    `value` TEXT NOT NULL,
-    serve_value TEXT NOT NULL,
-    enabled BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (flag_id) REFERENCES flag(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS rollout (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    flag_id BIGINT NOT NULL,
-    percentage INT NOT NULL,
-    serve_value TEXT NOT NULL,
-    enabled BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (flag_id) REFERENCES flag(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS audit_log (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    flag_id BIGINT,
-    action VARCHAR(50) NOT NULL,
-    changed_by VARCHAR(200),
-    detail TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (flag_id) REFERENCES flag(id) ON DELETE SET NULL
 );

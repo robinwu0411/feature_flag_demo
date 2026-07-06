@@ -1,8 +1,8 @@
 package com.ffs.server.controller;
 
 import com.ffs.server.TestConfig;
-import com.ffs.server.mapper.*;
-import com.ffs.server.model.entity.*;
+import com.ffs.server.mapper.FlagMapper;
+import com.ffs.server.model.entity.Flag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +13,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -30,36 +29,16 @@ class SyncControllerTest {
     @Autowired
     private FlagMapper flagMapper;
 
-    @Autowired
-    private ApplicationMapper applicationMapper;
-
-    @Autowired
-    private TargetingRuleMapper ruleMapper;
-
     @BeforeEach
     void setUp() {
-        Application app = new Application("test-app", "Test");
-        applicationMapper.insert(app);
-
         Flag flag = new Flag();
         flag.setKey("feature_x");
         flag.setName("Feature X");
         flag.setFlagType("BOOLEAN");
         flag.setDefaultValue("false");
         flag.setEnabled(true);
+        flag.setAppName("test-app");
         flagMapper.insert(flag);
-
-        flagMapper.insertFlagApplication(flag.getId(), app.getId());
-
-        TargetingRule rule = new TargetingRule();
-        rule.setFlagId(flag.getId());
-        rule.setPriority(1);
-        rule.setAttribute("region");
-        rule.setOperator("EQUALS");
-        rule.setValue("\"eu-west\"");
-        rule.setServeValue("true");
-        rule.setEnabled(true);
-        ruleMapper.insert(rule);
     }
 
     @Test
@@ -67,14 +46,13 @@ class SyncControllerTest {
         mockMvc.perform(get("/api/v1/eval/sync").param("appId", "test-app"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.flags.length()").value(1))
-                .andExpect(jsonPath("$.flags[0].key").value("feature_x"))
-                .andExpect(jsonPath("$.flags[0].rules[0].attribute").value("region"));
+                .andExpect(jsonPath("$.flags[0].key").value("feature_x"));
     }
 
     @Test
-    void shouldReturnErrorForUnknownApp() {
-        assertThrows(Exception.class, () -> {
-            mockMvc.perform(get("/api/v1/eval/sync").param("appId", "nonexistent"));
-        });
+    void shouldReturnEmptyForOtherApp() throws Exception {
+        mockMvc.perform(get("/api/v1/eval/sync").param("appId", "other-app"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.flags.length()").value(0));
     }
 }

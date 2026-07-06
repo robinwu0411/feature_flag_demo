@@ -1,8 +1,10 @@
 package com.ffs.server.model.entity;
 
+import java.io.Serializable;
 import java.time.Instant;
 
-public class Flag {
+public class Flag implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Long id;
     private String key;
     private String name;
@@ -11,6 +13,7 @@ public class Flag {
     private String defaultValue = "false";
     private Boolean enabled = false;
     private String releaseVersion;
+    private String appName;
     private String createdBy;
     private Instant createdAt;
     private Instant updatedAt;
@@ -33,6 +36,8 @@ public class Flag {
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
     public String getReleaseVersion() { return releaseVersion; }
     public void setReleaseVersion(String releaseVersion) { this.releaseVersion = releaseVersion; }
+    public String getAppName() { return appName; }
+    public void setAppName(String appName) { this.appName = appName; }
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
     public Instant getCreatedAt() { return createdAt; }

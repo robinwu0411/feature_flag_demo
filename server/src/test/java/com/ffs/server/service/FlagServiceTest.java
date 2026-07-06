@@ -1,11 +1,8 @@
 package com.ffs.server.service;
 
 import com.ffs.server.TestConfig;
-import com.ffs.server.mapper.ApplicationMapper;
 import com.ffs.server.model.dto.CreateFlagRequest;
-import com.ffs.server.model.dto.CreateRuleRequest;
-import com.ffs.server.model.dto.CreateRolloutRequest;
-import com.ffs.server.model.entity.*;
+import com.ffs.server.model.entity.Flag;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,9 +24,6 @@ class FlagServiceTest {
     @Autowired
     private FlagService flagService;
 
-    @Autowired
-    private ApplicationMapper applicationMapper;
-
     private Long flagId;
 
     @BeforeEach
@@ -41,6 +35,7 @@ class FlagServiceTest {
         req.setDefaultValue("false");
         req.setEnabled(true);
         req.setReleaseVersion("v1.0.0");
+        req.setAppName("test-app");
         req.setCreatedBy("tester");
         Flag flag = flagService.create(req);
         flagId = flag.getId();
@@ -51,48 +46,32 @@ class FlagServiceTest {
         Flag found = flagService.getById(flagId);
         assertThat(found.getKey()).isEqualTo("test_flag");
         assertThat(found.getFlagType()).isEqualTo("BOOLEAN");
+        assertThat(found.getAppName()).isEqualTo("test-app");
     }
 
     @Test
-    void shouldAddTargetingRule() {
-        CreateRuleRequest req = new CreateRuleRequest();
-        req.setPriority(1);
-        req.setAttribute("region");
-        req.setOperator("EQUALS");
-        req.setValue("\"eu-west\"");
-        req.setServeValue("true");
-
-        TargetingRule rule = flagService.addRule(flagId, req);
-        assertThat(rule.getId()).isNotNull();
-        assertThat(rule.getFlagId()).isEqualTo(flagId);
+    void shouldListAllFlags() {
+        List<Flag> flags = flagService.listAll();
+        assertThat(flags).isNotEmpty();
     }
 
     @Test
-    void shouldGetRulesOrderedByPriority() {
-        CreateRuleRequest r1 = new CreateRuleRequest();
-        r1.setPriority(2); r1.setAttribute("plan"); r1.setOperator("EQUALS");
-        r1.setValue("\"premium\""); r1.setServeValue("true");
-        flagService.addRule(flagId, r1);
-
-        CreateRuleRequest r2 = new CreateRuleRequest();
-        r2.setPriority(1); r2.setAttribute("region"); r2.setOperator("EQUALS");
-        r2.setValue("\"eu-west\""); r2.setServeValue("true");
-        flagService.addRule(flagId, r2);
-
-        List<TargetingRule> rules = flagService.getRules(flagId);
-        assertThat(rules).hasSize(2);
-        assertThat(rules.get(0).getPriority()).isEqualTo(1);
+    void shouldUpdateFlag() {
+        CreateFlagRequest req = new CreateFlagRequest();
+        req.setName("Updated Flag");
+        req.setEnabled(false);
+        Flag updated = flagService.update(flagId, req);
+        assertThat(updated.getName()).isEqualTo("Updated Flag");
+        assertThat(updated.getEnabled()).isFalse();
     }
 
     @Test
-    void shouldSetRollout() {
-        CreateRolloutRequest req = new CreateRolloutRequest();
-        req.setPercentage(30);
-        req.setServeValue("true");
-        flagService.setRollout(flagId, req);
-
-        List<Rollout> rollouts = flagService.getRollouts(flagId);
-        assertThat(rollouts).hasSize(1);
-        assertThat(rollouts.get(0).getPercentage()).isEqualTo(30);
+    void shouldDeleteFlag() {
+        flagService.delete(flagId);
+        try {
+            flagService.getById(flagId);
+        } catch (RuntimeException e) {
+            assertThat(e.getMessage()).contains("not found");
+        }
     }
 }

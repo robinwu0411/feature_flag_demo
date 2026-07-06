@@ -1,0 +1,102 @@
+{
+  "title": "Feature Flag Platform",
+  "uid": "ff-platform",
+  "panels": [
+    {
+      "title": "Sync Requests (rate)",
+      "targets": [
+        {
+          "expr": "rate(ff_sync_requests_total[5m])",
+          "legendFormat": "req/s"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "type": "stat",
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "title": "Sync Duration Max",
+      "targets": [
+        {
+          "expr": "ff_sync_duration_ms_seconds_max * 1000",
+          "legendFormat": "ms"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "type": "stat",
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "title": "Sync Duration Avg",
+      "targets": [
+        {
+          "expr": "rate(ff_sync_duration_ms_seconds_sum[5m]) / rate(ff_sync_duration_ms_seconds_count[5m]) * 1000",
+          "legendFormat": "ms"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "type": "stat",
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "title": "Admin Operations",
+      "targets": [
+        {
+          "expr": "rate(ff_admin_operations_total[5m])",
+          "legendFormat": "writes/s"
+        },
+        {
+          "expr": "rate(ff_admin_read_operations_total[5m])",
+          "legendFormat": "reads/s"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "type": "timeseries"
+    },
+    {
+      "title": "Admin Write Duration",
+      "targets": [
+        {
+          "expr": "ff_admin_write_duration_seconds{quantile=\"0.50\"} * 1000",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "ff_admin_write_duration_seconds{quantile=\"0.95\"} * 1000",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "ff_admin_write_duration_seconds{quantile=\"0.99\"} * 1000",
+          "legendFormat": "p99"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "type": "timeseries",
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "title": "Health Checks",
+      "targets": [
+        {
+          "expr": "ff_health_checks_total",
+          "legendFormat": "total"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "type": "stat"
+    },
+    {
+      "title": "Sync Request Count",
+      "targets": [
+        {
+          "expr": "ff_sync_requests_total",
+          "legendFormat": "total"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "type": "stat"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["feature-flags"],
+  "time": { "from": "now-15m", "to": "now" }
+}

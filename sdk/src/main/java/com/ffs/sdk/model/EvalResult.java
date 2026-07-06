@@ -11,6 +11,8 @@ public class EvalResult {
     private List<TraceEntry> trace = new ArrayList<>();
     private String releaseVersion;
     private String flagUpdatedAt;
+    private String userId;
+    private String region;
 
     public EvalResult() {}
     public EvalResult(String flagKey, String value, String reason) {
@@ -32,4 +34,8 @@ public class EvalResult {
     public void setReleaseVersion(String releaseVersion) { this.releaseVersion = releaseVersion; }
     public String getFlagUpdatedAt() { return flagUpdatedAt; }
     public void setFlagUpdatedAt(String flagUpdatedAt) { this.flagUpdatedAt = flagUpdatedAt; }
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
+    public String getRegion() { return region; }
+    public void setRegion(String region) { this.region = region; }
 }

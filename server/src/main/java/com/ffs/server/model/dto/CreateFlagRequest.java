@@ -8,6 +8,7 @@ public class CreateFlagRequest {
     private String defaultValue = "false";
     private Boolean enabled = false;
     private String releaseVersion;
+    private String appName;
     private String createdBy;
 
     public String getKey() { return key; }
@@ -24,6 +25,8 @@ public class CreateFlagRequest {
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
     public String getReleaseVersion() { return releaseVersion; }
     public void setReleaseVersion(String releaseVersion) { this.releaseVersion = releaseVersion; }
+    public String getAppName() { return appName; }
+    public void setAppName(String appName) { this.appName = appName; }
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
 }

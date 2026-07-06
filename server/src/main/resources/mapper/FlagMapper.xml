@@ -12,6 +12,7 @@
         <result property="defaultValue" column="default_value"/>
         <result property="enabled" column="enabled"/>
         <result property="releaseVersion" column="release_version"/>
+        <result property="appName" column="app_name"/>
         <result property="createdBy" column="created_by"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
@@ -29,21 +30,17 @@
         SELECT * FROM flag ORDER BY id
     </select>
 
-    <select id="findByApplicationId" resultMap="flagMap">
-        SELECT f.* FROM flag f
-        INNER JOIN flag_application fa ON f.id = fa.flag_id
-        WHERE fa.application_id = #{appId}
+    <select id="findAllEnabled" resultMap="flagMap">
+        SELECT * FROM flag WHERE enabled = TRUE ORDER BY app_name, id
     </select>
 
-    <select id="findByApplicationIdAndUpdatedAfter" resultMap="flagMap">
-        SELECT f.* FROM flag f
-        INNER JOIN flag_application fa ON f.id = fa.flag_id
-        WHERE fa.application_id = #{appId} AND f.updated_at > #{since}
+    <select id="findEnabledByAppName" resultMap="flagMap">
+        SELECT * FROM flag WHERE enabled = TRUE AND app_name = #{appName} ORDER BY id
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO flag (`key`, name, description, flag_type, default_value, enabled, release_version, created_by, created_at, updated_at)
-        VALUES (#{key}, #{name}, #{description}, #{flagType}, #{defaultValue}, #{enabled}, #{releaseVersion}, #{createdBy}, NOW(), NOW())
+        INSERT INTO flag (`key`, name, description, flag_type, default_value, enabled, release_version, app_name, created_by, created_at, updated_at)
+        VALUES (#{key}, #{name}, #{description}, #{flagType}, #{defaultValue}, #{enabled}, #{releaseVersion}, #{appName}, #{createdBy}, NOW(), NOW())
     </insert>
 
     <update id="update">
@@ -60,12 +57,4 @@
     <delete id="deleteById">
         DELETE FROM flag WHERE id = #{id}
     </delete>
-
-    <insert id="insertFlagApplication">
-        INSERT INTO flag_application (flag_id, application_id) VALUES (#{flagId}, #{applicationId})
-    </insert>
-
-    <select id="findApplicationIdsByFlagId" resultType="long">
-        SELECT application_id FROM flag_application WHERE flag_id = #{flagId}
-    </select>
 </mapper>
